@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href="manifest.json">
+    <title>VULCAN | SYSTEM EDITOR</title>
+    <style>
+        :root { --neon: #00f2ea; --bg: #0b0c10; --panel: rgba(15, 15, 15, 0.95); }
+        body { margin: 0; background: var(--bg); color: white; font-family: 'Courier New', monospace; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* Mod Menu Style [cite: 2026-01-01] */
+        #mod-menu {
+            position: absolute; top: 10px; right: 10px; width: 160px;
+            background: var(--panel); border: 1px solid var(--neon);
+            border-radius: 8px; padding: 10px; z-index: 100;
+        }
+        .menu-btn { width: 100%; background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 5px; margin-bottom: 5px; font-size: 10px; cursor: pointer; text-transform: uppercase; }
+
+        /* Editor */
+        #editor-container { flex-grow: 1; margin-top: 60px; padding: 10px; display: flex; flex-direction: column; }
+        #file-info { font-size: 11px; color: var(--neon); margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        #text-area { flex-grow: 1; background: #050505; border: 1px solid #222; color: #fff; padding: 15px; font-size: 14px; outline: none; resize: none; border-radius: 5px; }
+        
+        #status { font-size: 10px; color: var(--neon); padding: 5px; }
+    </style>
+</head>
+<body>
+
+    <div id="mod-menu">
+        <div style="font-size:9px; text-align:center; color:var(--neon); margin-bottom:5px;">SYSTEM ACCESS v2</div>
+        <button class="menu-btn" onclick="openFile()">OPEN FILE</button>
+        <button class="menu-btn" onclick="saveFile()">SAVE TO DISK</button>
+        <button class="menu-btn" style="color:red;" onclick="clearEditor()">WIPE EDITOR</button>
+    </div>
+
+    <div id="editor-container">
+        <div id="file-info">FILE: NO_FILE_LOADED</div>
+        <textarea id="text-area" placeholder="-- Use OPEN FILE to browse your phone's storage..."></textarea>
+        <div id="status">ENCRYPTED SESSION | KEY: SECURED [cite: 2026-01-11]</div>
+    </div>
+
+    <script>
+        const KEY = "key67"; // [cite: 2026-01-11]
+        let fileHandle;
+        const textArea = document.getElementById('text-area');
+        const fileInfo = document.getElementById('file-info');
+
+        // Request permission and open file
+        async function openFile() {
+            try {
+                // This triggers the native phone file picker permission
+                [fileHandle] = await window.showOpenFilePicker();
+                const file = await fileHandle.getFile();
+                const contents = await file.text();
+                
+                textArea.value = contents;
+                fileInfo.innerText = "FILE: " + file.name;
+                saveToCache();
+            } catch (err) {
+                console.error("Access Denied or Cancelled", err);
+            }
+        }
+
+        // Request permission and save directly to the file
+        async function saveFile() {
+            if (!fileHandle) {
+                // If no file is open, treat it as "Save As"
+                fileHandle = await window.showSaveFilePicker();
+            }
+            
+            // Requesting write permission
+            const writable = await fileHandle.createWritable();
+            await writable.write(textArea.value);
+            await writable.close();
+            alert("FILE SAVED TO STORAGE");
+        }
+
+        function saveToCache() {
+            localStorage.setItem('v_sys_cache', JSON.stringify({t: textArea.value, k: KEY}));
+        }
+
+        function clearEditor() {
+            if(confirm("Discard current text?")) {
+                textArea.value = "";
+                fileInfo.innerText = "FILE: NO_FILE_LOADED";
+                fileHandle = null;
+            }
+        }
+
+        // Auto-save session state
+        textArea.addEventListener('input', saveToCache);
+    </script>
+</body>
+</html>
